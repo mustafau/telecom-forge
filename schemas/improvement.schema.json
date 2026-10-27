@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telecom-forge.local/schemas/improvement.schema.json",
+  "type": "object",
+  "required": ["schema_version", "state", "finding"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "state": {
+      "enum": ["PROPOSED", "TRIAGED", "APPROVED", "IMPLEMENTED", "MEASURING", "EFFECTIVE", "INEFFECTIVE", "INCONCLUSIVE", "REJECTED", "SUPERSEDED"]
+    },
+    "finding": { "type": "object" }
+  }
+}

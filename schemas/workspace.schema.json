@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telecom-forge.local/schemas/workspace.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "workspace", "harness", "policy", "history", "repositories"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "workspace": { "type": "object" },
+    "harness": { "type": "object" },
+    "policy": { "type": "object" },
+    "history": { "type": "object" },
+    "repositories": { "type": "object" }
+  }
+}

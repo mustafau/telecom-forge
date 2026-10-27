@@ -1,0 +1,33 @@
+schema_version: 1
+profiles:
+  none:
+    commands: []
+  node-script:
+    commands:
+      - id: test
+        argv: [node, --test]
+        timeout_seconds: 120
+        env_allowlist: [PATH, HOME]
+        max_output_bytes: 200000
+      - id: build
+        argv: [node, -e, "process.exit(0)"]
+        timeout_seconds: 30
+        env_allowlist: [PATH]
+        max_output_bytes: 20000
+  node-example:
+    commands:
+      - id: install
+        argv: [corepack, pnpm, install, --frozen-lockfile]
+        timeout_seconds: 300
+        env_allowlist: [PATH, HOME, CI]
+        max_output_bytes: 200000
+      - id: test
+        argv: [corepack, pnpm, test]
+        timeout_seconds: 600
+        env_allowlist: [PATH, HOME, CI]
+        max_output_bytes: 200000
+      - id: build
+        argv: [corepack, pnpm, build]
+        timeout_seconds: 600
+        env_allowlist: [PATH, HOME, CI]
+        max_output_bytes: 200000

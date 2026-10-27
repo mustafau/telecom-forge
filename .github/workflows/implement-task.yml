@@ -1,0 +1,294 @@
+name: Implement Telecom Forge Task
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_branch:
+        description: Branch containing the task definition
+        required: true
+        type: string
+      task_path:
+        description: Path to tasks/<id>/task.yaml
+        required: true
+        type: string
+      dry_run:
+        description: Do not publish source commits or pull requests
+        required: false
+        default: true
+        type: boolean
+      allow_nondurable_history:
+        description: Demo mode. Evidence is not durable and publication stays blocked.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: forge-${{ inputs.task_branch }}
+  cancel-in-progress: false
+
+jobs:
+  validate_and_prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      run_dir: ${{ steps.prepare.outputs.run_dir }}
+      run_id: ${{ steps.prepare.outputs.run_id }}
+    steps:
+      - name: Checkout trusted default-branch control code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Require durable history before any agent work
+        env:
+          ALLOW_NONDURABLE: ${{ inputs.allow_nondurable_history }}
+          FORGE_HISTORY_BUCKET: ${{ vars.FORGE_HISTORY_BUCKET }}
+          FORGE_HISTORY_WRITER_ROLE_CONFIGURED: ${{ secrets.FORGE_HISTORY_WRITER_ROLE_ARN != '' }}
+        run: |
+          set -euo pipefail
+          if [ "$ALLOW_NONDURABLE" = "true" ]; then
+            echo "Nondurable demo mode is explicit. Publication will remain blocked."
+            exit 0
+          fi
+          if [ -z "${FORGE_HISTORY_BUCKET}" ] || [ "$FORGE_HISTORY_WRITER_ROLE_CONFIGURED" != "true" ]; then
+            echo "::error::Durable history is not configured. Set variable FORGE_HISTORY_BUCKET and secret FORGE_HISTORY_WRITER_ROLE_ARN, or dispatch with allow_nondurable_history for a demo that cannot publish."
+            exit 1
+          fi
+
+      - name: Mint read-only GitHub App token
+        id: read-token
+        if: vars.FORGE_APP_ID != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.FORGE_APP_ID }}
+          private-key: ${{ secrets.FORGE_APP_PRIVATE_KEY }}
+          owner: ${{ vars.FORGE_GITHUB_OWNER }}
+          permission-contents: read
+          permission-pull-requests: read
+          permission-checks: read
+
+      - name: Prepare workspace
+        id: prepare
+        env:
+          TASK_BRANCH: ${{ inputs.task_branch }}
+          TASK_PATH: ${{ inputs.task_path }}
+          FORGE_GITHUB_TOKEN: ${{ steps.read-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          pnpm forge prepare --task-ref "$TASK_BRANCH" --task-path "$TASK_PATH" --control-ref "${{ github.sha }}" --json > prepare.json
+          node --input-type=module -e 'import {readFileSync} from "node:fs"; const manifest = JSON.parse(readFileSync("prepare.json","utf8")); console.log(`run_id=${manifest.run_id}`); console.log(`run_dir=.forge-runtime/runs/${manifest.run_id}`);' >> "$GITHUB_OUTPUT"
+
+      - name: Pack prepared handoff
+        run: |
+          set -euo pipefail
+          rm -rf forge-handoff
+          mkdir -p forge-handoff/dot-runtime
+          cp -a repos forge-handoff/repos
+          cp -a .forge-runtime/runs forge-handoff/dot-runtime/runs
+      - name: Upload prepared handoff
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: prepared-workspace
+          path: forge-handoff
+          retention-days: 7
+          include-hidden-files: true
+
+  agent_and_verify:
+    needs: validate_and_prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: prepared-workspace
+          path: forge-handoff
+      - name: Restore prepared workspace
+        run: |
+          set -euo pipefail
+          rm -rf repos
+          mkdir -p .forge-runtime
+          cp -a forge-handoff/repos repos
+          cp -a forge-handoff/dot-runtime/runs .forge-runtime/runs
+      - name: Run harness and verify without GitHub credentials
+        env:
+          GITHUB_TOKEN: ""
+          GH_TOKEN: ""
+          FORGE_GITHUB_TOKEN: ""
+          FORGE_MODEL_PROVIDER: ${{ vars.FORGE_MODEL_PROVIDER }}
+          FORGE_MODEL_ID: ${{ vars.FORGE_MODEL_ID }}
+          RUN_DIR: ${{ needs.validate_and_prepare.outputs.run_dir }}
+        run: |
+          set -euo pipefail
+          test -z "${GITHUB_TOKEN}"
+          test -z "${GH_TOKEN}"
+          pnpm forge run --prepared "$RUN_DIR" --harness pi --json
+          pnpm forge verify --run-dir "$RUN_DIR" --json
+          pnpm forge bundle --run-dir "$RUN_DIR" --json
+      - name: Pack recovery bundle
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -rf forge-handoff
+          mkdir -p forge-handoff/dot-runtime
+          cp -a repos forge-handoff/repos
+          cp -a .forge-runtime/runs forge-handoff/dot-runtime/runs
+      - name: Upload recovery bundle
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: run-bundle
+          path: forge-handoff
+          retention-days: 7
+          include-hidden-files: true
+
+  persist_evidence:
+    if: always()
+    needs: [validate_and_prepare, agent_and_verify]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: run-bundle
+          path: forge-handoff
+      - name: Restore run bundle
+        run: |
+          set -euo pipefail
+          mkdir -p .forge-runtime
+          cp -a forge-handoff/dot-runtime/runs .forge-runtime/runs
+      - name: Assume history writer role
+        if: inputs.allow_nondurable_history == false
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.FORGE_HISTORY_WRITER_ROLE_ARN }}
+          aws-region: ${{ vars.FORGE_AWS_REGION }}
+      - name: Persist evidence
+        env:
+          RUN_DIR: ${{ needs.validate_and_prepare.outputs.run_dir }}
+          FORGE_HISTORY_BACKEND: s3
+          FORGE_HISTORY_BUCKET: ${{ vars.FORGE_HISTORY_BUCKET }}
+          AWS_REGION: ${{ vars.FORGE_AWS_REGION }}
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.allow_nondurable_history }}" = "true" ]; then
+            echo "::error::Nondurable demo mode does not write a durable receipt, so publication stays blocked."
+            pnpm forge history persist --run-dir "$RUN_DIR" --nondurable --json || true
+            exit 1
+          fi
+          pnpm forge history persist --run-dir "$RUN_DIR" --json
+      - name: Upload durable receipt
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: evidence-receipt
+          path: .forge-runtime/runs
+          retention-days: 7
+          include-hidden-files: true
+
+  publish:
+    needs: [agent_and_verify, persist_evidence]
+    if: needs.agent_and_verify.result == 'success' && needs.persist_evidence.result == 'success' && inputs.dry_run == false
+    runs-on: ubuntu-latest
+    environment: forge-publish
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.28.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: evidence-receipt
+          path: .forge-runtime/runs
+      - name: Assume history reader role
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.FORGE_HISTORY_WRITER_ROLE_ARN }}
+          aws-region: ${{ vars.FORGE_AWS_REGION }}
+      - name: Mint publish token
+        id: publish-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.FORGE_APP_ID }}
+          private-key: ${{ secrets.FORGE_APP_PRIVATE_KEY }}
+          owner: ${{ vars.FORGE_GITHUB_OWNER }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Publish validated bundle
+        env:
+          RUN_DIR: ${{ needs.validate_and_prepare.outputs.run_dir }}
+          FORGE_ALLOW_LIVE_PUBLISH: "1"
+          FORGE_GITHUB_TOKEN: ${{ steps.publish-token.outputs.token }}
+          FORGE_HISTORY_BACKEND: s3
+          FORGE_HISTORY_BUCKET: ${{ vars.FORGE_HISTORY_BUCKET }}
+          AWS_REGION: ${{ vars.FORGE_AWS_REGION }}
+        run: pnpm forge publish --bundle "$RUN_DIR" --apply --json
+
+  finalize:
+    if: always()
+    needs: [validate_and_prepare, agent_and_verify, persist_evidence, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+    steps:
+      - name: Summarize
+        run: |
+          {
+            echo "## Implement task"
+            echo ""
+            echo "- Task branch input is recorded by the prepare job, not expanded into a shell command here."
+            echo "- Prepare: ${{ needs.validate_and_prepare.result }}"
+            echo "- Agent and verify: ${{ needs.agent_and_verify.result }}"
+            echo "- Evidence: ${{ needs.persist_evidence.result }}"
+            echo "- Publish: ${{ needs.publish.result }}"
+            echo "- Dry run input: ${{ inputs.dry_run }}"
+            echo ""
+            echo "A successful publish creates draft pull requests only. It does not merge or deploy."
+            echo "If evidence persistence failed, publication did not run."
+          } >> "$GITHUB_STEP_SUMMARY"

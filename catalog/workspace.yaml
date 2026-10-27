@@ -1,0 +1,63 @@
+schema_version: 1
+workspace:
+  name: telecom-forge
+  source_directory: repos
+  working_directory: .
+  organization: YOUR_GITHUB_OWNER
+
+harness:
+  adapter: pi
+  provider_env: FORGE_MODEL_PROVIDER
+  model_env: FORGE_MODEL_ID
+  max_runtime_minutes: 45
+  max_attempts_per_task: 2
+
+policy:
+  require_draft_pr: true
+  allow_direct_merge: false
+  allow_unlisted_repositories: false
+  allow_modified_workflows: false
+  allow_deployments: false
+  max_writable_repositories: 3
+  max_patch_bytes_per_repository: 5000000
+  max_changed_files: 200
+  max_deletions: 50
+  fail_on_base_branch_movement: true
+  permitted_branch_prefixes:
+    - feature/
+    - agent/
+
+history:
+  backend: filesystem
+  local_root: .forge-runtime/history
+  s3_bucket_env: FORGE_HISTORY_BUCKET
+  s3_prefix: telecom-forge/v1
+  raw_retention_days: 120
+  metadata_retention_days: 400
+
+repositories:
+  telecom-api-sandbox:
+    owner: YOUR_GITHUB_OWNER
+    name: telecom-api-sandbox
+    checkout_path: repos/telecom-api-sandbox
+    default_branch: main
+    access: read-write
+    build_profile: node-script
+    owned_by: telecom-platform
+    description: Illustrative telecom API sandbox. Replace owner and name before live use.
+    depends_on: []
+    allow_submodules: false
+    allow_lfs: false
+
+  shared-contracts:
+    owner: YOUR_GITHUB_OWNER
+    name: YOUR_SHARED_CONTRACTS_REPO
+    checkout_path: repos/shared-contracts
+    default_branch: main
+    access: read-only
+    build_profile: none
+    owned_by: telecom-platform
+    description: Illustrative cross-service schemas. Configure when a real repository exists.
+    depends_on: []
+    allow_submodules: false
+    allow_lfs: false

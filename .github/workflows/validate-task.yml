@@ -1,0 +1,80 @@
+name: Validate Telecom Forge Task
+
+on:
+  pull_request:
+    paths:
+      - "tasks/**"
+      - "schemas/task.schema.json"
+      - "catalog/workspace.yaml"
+  workflow_dispatch:
+    inputs:
+      task_ref:
+        description: Branch, tag, or SHA containing the task
+        required: true
+        type: string
+      task_path:
+        description: Path to tasks/<id>/task.yaml
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted workflow revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate dispatched task
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TASK_REF: ${{ inputs.task_ref }}
+          TASK_PATH: ${{ inputs.task_path }}
+        run: pnpm forge validate-task --task-ref "$TASK_REF" --task-path "$TASK_PATH" --json
+
+      - name: Validate changed task files
+        if: github.event_name == 'pull_request'
+        env:
+          TASK_REF: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git diff --name-only "${{ github.event.pull_request.base.sha }}" "$TASK_REF" -- 'tasks/*/task.yaml')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No task.yaml changes."
+            exit 0
+          fi
+          for task_path in "${files[@]}"; do
+            pnpm forge validate-task --task-ref "$TASK_REF" --task-path "$task_path" --json
+          done
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Validate task"
+            echo ""
+            echo "- Event: ${{ github.event_name }}"
+            echo "- Control SHA: ${{ github.sha }}"
+            echo "This job is read-only. It does not start a model or mint a write token."
+          } >> "$GITHUB_STEP_SUMMARY"
