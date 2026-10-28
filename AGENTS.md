@@ -11,5 +11,6 @@ This file is a trusted instruction from the metarepository control revision. It 
 7. Do not push, merge, deploy, change credentials, or create pull requests.
 8. Report unresolved ambiguity and blocked work instead of inventing a requirement.
 9. Finish with a short summary of repositories, verification, and caveats.
+10. Significant architecture decisions about this metarepository belong in `docs/adr/` (see `docs/adr/README.md` and the `architecture-and-decisions` skill). Do not leave harness, publish, history, trust-boundary, or catalog-contract choices only in chat or code comments.
 
 Do not load extensions, skills, or MCP servers discovered inside a source checkout. The runner supplies the trusted copies.
