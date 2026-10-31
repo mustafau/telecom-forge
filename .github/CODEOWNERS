@@ -1,11 +1,9 @@
-# Replace the team below with the real reviewing team before protecting branches.
-# The placeholder is intentional. This file does not refer to an existing GitHub organization.
+# Default reviewer for this personal public repository.
+* @mustafau
 
-* @YOUR_GITHUB_OWNER/telecom-platform
-
-/.github/workflows/ @YOUR_GITHUB_OWNER/telecom-platform
-/catalog/ @YOUR_GITHUB_OWNER/telecom-platform
-/.agents/skills/ @YOUR_GITHUB_OWNER/telecom-platform
-/prompts/ @YOUR_GITHUB_OWNER/telecom-platform
-/extensions/ @YOUR_GITHUB_OWNER/telecom-platform
-/AGENTS.md @YOUR_GITHUB_OWNER/telecom-platform
+/.github/workflows/ @mustafau
+/catalog/ @mustafau
+/.agents/skills/ @mustafau
+/prompts/ @mustafau
+/extensions/ @mustafau
+/AGENTS.md @mustafau
