@@ -1,4 +1,4 @@
-name: Implement Telecom Forge Task
+name: Implement task
 
 on:
   workflow_dispatch:

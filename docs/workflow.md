@@ -6,7 +6,7 @@
 2. `pnpm forge init-task --id TF-0001 --branch task/TF-0001`.
 3. Edit the task and commit it.
 4. `pnpm forge validate-task --task-ref task/TF-0001 --task-path tasks/TF-0001/task.yaml`.
-5. Start **Implement Telecom Forge Task** from the Actions tab on the default branch, or:
+5. Start **Implement task** from the Actions tab on the default branch, or:
 
 ```bash
 gh workflow run implement-task.yml --ref main \

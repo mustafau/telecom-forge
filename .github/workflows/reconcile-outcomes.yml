@@ -1,4 +1,4 @@
-name: Reconcile Telecom Forge Outcomes
+name: Reconcile outcomes
 
 on:
   schedule:

@@ -1,4 +1,4 @@
-name: Validate Telecom Forge Task
+name: Validate task
 
 on:
   pull_request:
