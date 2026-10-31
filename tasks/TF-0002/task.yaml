@@ -1,0 +1,26 @@
+schema_version: 1
+id: TF-0002
+title: Add one JSDoc line to page()
+task_branch: task/TF-0002
+feature_branch: feature/TF-0002
+spec_file: task.md
+
+scope:
+  writable_repositories:
+    - telecom-api-sandbox
+  context_repositories: []
+
+requirements:
+  implementation_required: true
+  require_tests: false
+  draft_pull_requests: true
+  documentation_only: false
+
+acceptance:
+  - repos/telecom-api-sandbox/src/pagination.js has a JSDoc comment immediately above export function page.
+
+constraints:
+  - Edit only repos/telecom-api-sandbox/src/pagination.js.
+  - Make exactly one small edit. Do not change behavior.
+  - Do not read other repositories, skills, or docs unless required.
+  - Do not run tests. Do not create new files. Stop after the edit.
