@@ -53,7 +53,7 @@ export async function createWorld(options?: {
   await gitOk(["init", "-b", "main"], { cwd: root });
   await gitOk(["add", "-A"], { cwd: root });
   await gitOk(["commit", "-m", "control plane"], { cwd: root, identity: true });
-  await gitOk(["checkout", "-b", "feature/TF-0001"], { cwd: root });
+  await gitOk(["checkout", "-b", "task/TF-0001"], { cwd: root });
   await writeTask(root, writable);
   await gitOk(["add", "tasks"], { cwd: root });
   await gitOk(["commit", "-m", "task TF-0001"], { cwd: root, identity: true });
@@ -147,6 +147,7 @@ policy:
   max_deletions: 50
   fail_on_base_branch_movement: true
   permitted_branch_prefixes:
+    - task/
     - feature/
     - agent/
 history:
@@ -191,6 +192,7 @@ async function writeTask(root: string, writable = ["telecom-api-sandbox"]): Prom
     `schema_version: 1
 id: TF-0001
 title: Add pagination coverage to the sandbox
+task_branch: task/TF-0001
 feature_branch: feature/TF-0001
 spec_file: task.md
 scope:

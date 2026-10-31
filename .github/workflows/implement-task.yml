@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       task_branch:
-        description: Branch containing the task definition
+        description: Metarepo task branch (task/<id>) containing the task definition
         required: true
         type: string
       task_path:

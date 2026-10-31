@@ -190,7 +190,7 @@ async function runFlow(world: FixtureWorld, plan: Record<string, unknown>, git?:
 async function prepareOnly(world: FixtureWorld) {
   const manifest = await prepareWorkspace({
     repoRoot: world.root,
-    taskRef: "feature/TF-0001",
+    taskRef: "task/TF-0001",
     taskPath: "tasks/TF-0001/task.yaml",
     controlRef: "main",
   });

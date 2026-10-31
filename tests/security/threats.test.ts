@@ -24,7 +24,7 @@ describe("threat cases", () => {
       await commitFile(world.root, ".github/workflows/evil.yml", "name: evil\n", "hostile workflow");
       const manifest = await prepareWorkspace({
         repoRoot: world.root,
-        taskRef: "feature/TF-0001",
+        taskRef: "task/TF-0001",
         taskPath: "tasks/TF-0001/task.yaml",
         controlRef: "main",
       });
@@ -35,7 +35,7 @@ describe("threat cases", () => {
       await expect(
         validateTask({
           repoRoot: world.root,
-          taskRef: "feature/TF-0001",
+          taskRef: "task/TF-0001",
           taskPath: "tasks/TF-0001/task.yaml",
           config: {
             ...config,

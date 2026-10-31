@@ -1,7 +1,7 @@
 import { ForgeError } from "../lib/errors.js";
 import { assertCleanRef } from "../lib/git.js";
 
-const BRANCH_PREFIXES = ["feature/", "agent/"];
+const BRANCH_PREFIXES = ["task/", "feature/", "agent/"];
 
 export function assertPermittedBranch(branch: string, prefixes = BRANCH_PREFIXES): string {
   const safe = assertCleanRef(branch);

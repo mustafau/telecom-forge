@@ -60,13 +60,14 @@ export async function validateTask(input: ValidateTaskInput): Promise<TaskSnapsh
     throw new ForgeError("TASK_PATH_MISMATCH", "spec_file must be task.md in the task directory.");
   }
   if (!isFullSha(input.taskRef)) {
-    if (input.taskRef !== task.feature_branch) {
+    if (input.taskRef !== task.task_branch) {
       throw new ForgeError(
         "BRANCH_MISMATCH",
-        `Task ref ${input.taskRef} does not match feature_branch ${task.feature_branch}.`,
+        `Task ref ${input.taskRef} does not match task_branch ${task.task_branch}.`,
       );
     }
   }
+  assertPermittedBranch(task.task_branch, input.config.workspace.policy.permitted_branch_prefixes);
   assertPermittedBranch(task.feature_branch, input.config.workspace.policy.permitted_branch_prefixes);
   if (task.requirements.draft_pull_requests !== true || input.config.workspace.policy.require_draft_pr !== true) {
     throw new ForgeError("UNSAFE_POLICY", "Draft pull requests are required.");

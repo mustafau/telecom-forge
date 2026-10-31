@@ -5,7 +5,7 @@ Telecom Forge is one Git repository. Each telecom service repository keeps its o
 The original proposal is `docs/original-proposal.md`. This page describes the implementation.
 
 ```text
-Developer task branch
+Developer task branch (task/<id>)
         |
         v
 Trusted default-branch workflow
@@ -13,7 +13,7 @@ Trusted default-branch workflow
         +-- validate and prepare (read-only token)
         +-- agent and verify (no GitHub or cloud write credentials)
         +-- persist evidence (history-writer role only)
-        +-- publish (GitHub App write token, draft pull requests)
+        +-- publish (GitHub App write token, draft PRs on feature/<id>)
         +-- finalize (summary; no merge)
 ```
 

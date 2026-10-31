@@ -14,4 +14,4 @@ This repository is the control plane for this team's telecom work: tasks, catalo
 
 ## Consequences
 
-A branch name is a logical task id. Each source repository gets its own commit and draft pull request. The catalog is telecom-specific and is not a multi-tenant product configuration.
+A task id is the logical work identifier. The metarepo uses `task/<id>`; each source repository gets its own `feature/<id>` commit and draft pull request (ADR 0009). The catalog is telecom-specific and is not a multi-tenant product configuration.

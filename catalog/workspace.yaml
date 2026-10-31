@@ -24,6 +24,7 @@ policy:
   max_deletions: 50
   fail_on_base_branch_movement: true
   permitted_branch_prefixes:
+    - task/
     - feature/
     - agent/
 

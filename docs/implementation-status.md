@@ -19,6 +19,7 @@ Last updated: 2026-10-27.
 ## Decisions
 
 - The sandbox build profile is `node-script` (`node --test`), not `node-example`. Local verification does not download packages. `node-example` remains in the catalog for a future pnpm repository.
+- Metarepo tasks use `task/<id>`; target publish branches use `feature/<id>` (`docs/adr/0009-task-and-feature-branches.md`).
 - Local remotes live in gitignored `.forge-runtime/local-remotes.json`. They can replace the clone URL of a catalog alias. They cannot add an alias or change `read-only` to `read-write`.
 - Publication defaults to dry-run. `--apply` requires a durable evidence receipt. A GitHub remote also requires `FORGE_ALLOW_LIVE_PUBLISH=1`.
 - The retrospective command is deterministic. It does not call Pi. The Pi adapter can build a read-only argv (`--tools read,grep,find,ls`), and the weekly analyzer job has no write token.

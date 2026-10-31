@@ -5,7 +5,7 @@ description: Plan compatible changes across more than one telecom repository and
 
 # Cross-repository changes
 
-Each writable repository gets its own commit and draft pull request. The shared name is the task's `feature_branch`, not one Git branch that spans remotes.
+Each writable repository gets its own commit and draft pull request on the task's `feature_branch`. That is not the metarepo `task_branch`, and it is not one Git branch that spans remotes.
 
 1. Change the contract before the consumer when the consumer would not compile against the old contract.
 2. Keep the old behavior working until the task says a version boundary is allowed.

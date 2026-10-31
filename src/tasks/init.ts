@@ -13,6 +13,13 @@ export async function initTask(options: {
     throw new ForgeError("INVALID_TASK", "Task id must look like TF-0001.");
   }
   assertPermittedBranch(options.branch);
+  if (!options.branch.startsWith("task/")) {
+    throw new ForgeError(
+      "UNSAFE_BRANCH",
+      `init-task --branch must be the metarepo task branch and start with "task/" (got "${options.branch}"). Publish branches use feature/<id>.`,
+    );
+  }
+  const featureBranch = `feature/${options.id}`;
   const directory = path.join(options.repoRoot, "tasks", options.id);
   await mkdir(directory, { recursive: false }).catch((error: NodeJS.ErrnoException) => {
     if (error.code === "EEXIST") {
@@ -22,8 +29,9 @@ export async function initTask(options: {
   });
   const templateDir = path.join(options.repoRoot, "tasks", "_template");
   const yaml = (await readFile(path.join(templateDir, "task.yaml"), "utf8"))
+    .replaceAll("task/TF-0000", options.branch)
+    .replaceAll("feature/TF-0000", featureBranch)
     .replaceAll("TF-0000", options.id)
-    .replaceAll("feature/TF-0000", options.branch)
     .replaceAll("Replace this title", options.title ?? "Replace this title");
   const markdown = (await readFile(path.join(templateDir, "task.md"), "utf8")).replaceAll("TF-0000", options.id);
   await writeFile(path.join(directory, "task.yaml"), yaml);

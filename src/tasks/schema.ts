@@ -5,6 +5,7 @@ export const TaskFileSchema = z
     schema_version: z.literal(1),
     id: z.string().regex(/^TF-[0-9]{4,8}$/),
     title: z.string().min(8).max(160),
+    task_branch: z.string().min(1).max(200),
     feature_branch: z.string().min(1).max(200),
     spec_file: z.string().min(1).max(200),
     scope: z
@@ -26,6 +27,27 @@ export const TaskFileSchema = z
   })
   .strict()
   .superRefine((task, context) => {
+    if (!task.task_branch.startsWith("task/")) {
+      context.addIssue({
+        code: "custom",
+        message: 'task_branch must start with "task/" (metarepo task branch).',
+        path: ["task_branch"],
+      });
+    }
+    if (!task.feature_branch.startsWith("feature/")) {
+      context.addIssue({
+        code: "custom",
+        message: 'feature_branch must start with "feature/" (publish branch on target repositories).',
+        path: ["feature_branch"],
+      });
+    }
+    if (task.task_branch === task.feature_branch) {
+      context.addIssue({
+        code: "custom",
+        message: "task_branch and feature_branch must differ so a self-targeted metarepo publish cannot collide with the task branch.",
+        path: ["feature_branch"],
+      });
+    }
     if (task.requirements.documentation_only) return;
     if (task.acceptance.length === 0 && task.requirements.require_tests) {
       context.addIssue({

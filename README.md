@@ -2,7 +2,7 @@
 
 Telecom Forge is the control-plane repository for AI-assisted engineering across independent telecom source repositories. It does not replace GitHub, code review, CI, or deployment, and it does not merge those repositories into a monorepo.
 
-A developer commits a task on a feature branch. A trusted workflow on the default branch reads that task at a pinned commit, checks out only the approved repositories, runs one coding harness, verifies the result with trusted commands, and — only when explicitly enabled — publishes draft pull requests. Humans review and merge those pull requests. A weekly retrospective reads the evidence and proposes improvements. It does not edit trusted skills by itself.
+A developer commits a task on a `task/<id>` branch. A trusted workflow on the default branch reads that task at a pinned commit, checks out only the approved repositories, runs one coding harness, verifies the result with trusted commands, and — only when explicitly enabled — publishes draft pull requests on `feature/<id>` in each target repository. Humans review and merge those pull requests. A weekly retrospective reads the evidence and proposes improvements. It does not edit trusted skills by itself.
 
 The names in `catalog/workspace.yaml` are placeholders. Nothing in this repository assumes a real GitHub organization, a real source repository, or a provisioned cloud account.
 
@@ -37,13 +37,13 @@ bash scripts/smoke-test.sh
 Create a task:
 
 ```bash
-git checkout -b feature/TF-0002
-pnpm forge init-task --id TF-0002 --branch feature/TF-0002
+git checkout -b task/TF-0002
+pnpm forge init-task --id TF-0002 --branch task/TF-0002
 # edit tasks/TF-0002/task.yaml and task.md, then commit
-pnpm forge validate-task --task-ref feature/TF-0002 --task-path tasks/TF-0002/task.yaml
+pnpm forge validate-task --task-ref task/TF-0002 --task-path tasks/TF-0002/task.yaml
 ```
 
-`validate-task` reads the committed revision. Uncommitted edits are ignored on purpose.
+`validate-task` reads the committed revision. Uncommitted edits are ignored on purpose. See `docs/adr/0009-task-and-feature-branches.md`.
 
 A writable repository is listed under `scope.writable_repositories` and must already be `read-write` in the catalog. A context repository is checked out read-only. The sample task `tasks/TF-0001` writes `telecom-api-sandbox` and reads `shared-contracts`.
 

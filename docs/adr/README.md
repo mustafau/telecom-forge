@@ -14,6 +14,7 @@ Write a new ADR when you change or introduce any of:
 - Trust boundaries (agent vs publisher, credentials, protected paths)
 - Catalog or task contracts that other repos or workflows depend on
 - Trigger model, retro loop, or anything that expands agent privilege
+- Branch naming for tasks versus publish targets
 - A deliberate tradeoff that future agents would otherwise re-litigate
 
 Skip an ADR for routine bugfixes, renames, test-only helpers, and doc wording that does not change behavior.

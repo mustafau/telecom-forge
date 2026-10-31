@@ -1,6 +1,7 @@
 schema_version: 1
 id: TF-0000
 title: Replace this title
+task_branch: task/TF-0000
 feature_branch: feature/TF-0000
 spec_file: task.md
 

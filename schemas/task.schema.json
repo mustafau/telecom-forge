@@ -3,12 +3,13 @@
   "$id": "https://telecom-forge.local/schemas/task.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "id", "title", "feature_branch", "spec_file", "scope", "requirements", "acceptance", "constraints"],
+  "required": ["schema_version", "id", "title", "task_branch", "feature_branch", "spec_file", "scope", "requirements", "acceptance", "constraints"],
   "properties": {
     "schema_version": { "const": 1 },
     "id": { "type": "string", "pattern": "^TF-[0-9]{4,8}$" },
     "title": { "type": "string", "minLength": 8, "maxLength": 160 },
-    "feature_branch": { "type": "string", "minLength": 1 },
+    "task_branch": { "type": "string", "minLength": 1, "pattern": "^task/" },
+    "feature_branch": { "type": "string", "minLength": 1, "pattern": "^feature/" },
     "spec_file": { "const": "task.md" },
     "scope": {
       "type": "object",

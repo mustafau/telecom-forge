@@ -34,7 +34,7 @@ interface ParsedArgs {
 
 const HELP: Record<string, string> = {
   doctor: "forge doctor [--require-durable-history] [--json]\nCheck local tools, catalog, and optional cloud or GitHub credentials.",
-  "init-task": "forge init-task --id TF-0001 --branch feature/TF-0001 [--title text]\nCreate tasks/<id>/ from the template. Does not commit.",
+  "init-task": "forge init-task --id TF-0001 --branch task/TF-0001 [--title text]\nCreate tasks/<id>/ from the template (task_branch=task/…, feature_branch=feature/<id>). Does not commit.",
   "validate-task": "forge validate-task --task-ref <ref> --task-path tasks/<id>/task.yaml [--json]\nValidate a committed task revision against the trusted catalog.",
   prepare: "forge prepare --task-ref <ref> --task-path <path> [--control-ref main] [--output dir] [--json]\nResolve pinned SHAs and check out approved repositories.",
   run: "forge run --prepared <dir> --harness pi|fake [--json]\nRun the coding harness. The fake harness is for offline rehearsal.",
