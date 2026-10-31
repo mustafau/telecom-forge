@@ -15,7 +15,7 @@ Node.js 22 or newer is required. This workspace was developed on Node 22.9. Type
 
 | Variable | Required for |
 |---|---|
-| `FORGE_MODEL_PROVIDER`, `FORGE_MODEL_ID` | A real Pi run (Gemini: `google` / `gemini-2.5-flash`) |
+| `FORGE_MODEL_PROVIDER`, `FORGE_MODEL_ID` | A real Pi run (Gemini: `google` / `gemini-3.5-flash-lite`) |
 | `GEMINI_API_KEY` | Pi → Google Gemini (https://aistudio.google.com/apikey) |
 | `FORGE_PI_BIN` | Override the `pi` binary from `node_modules/.bin/pi` |
 | `FORGE_FAKE_HARNESS_PLAN` | Offline fake harness edits |
