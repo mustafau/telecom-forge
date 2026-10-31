@@ -32,22 +32,36 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Check GitHub App and history configuration
+        id: config
+        run: |
+          set -euo pipefail
+          client_id="${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}"
+          if [ -z "$client_id" ] || [ -z "${{ vars.FORGE_HISTORY_BUCKET }}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::FORGE_APP_CLIENT_ID (or legacy FORGE_APP_ID) and FORGE_HISTORY_BUCKET are required. Skipping reconcile until they are set."
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
       - name: Mint read-only GitHub App token
         id: read-token
+        if: steps.config.outputs.ready == 'true'
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.FORGE_APP_ID }}
+          client-id: ${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}
           private-key: ${{ secrets.FORGE_APP_PRIVATE_KEY }}
           owner: ${{ vars.FORGE_GITHUB_OWNER }}
           permission-contents: read
           permission-pull-requests: read
           permission-checks: read
       - name: Assume history writer role
+        if: steps.config.outputs.ready == 'true'
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.FORGE_HISTORY_WRITER_ROLE_ARN }}
           aws-region: ${{ vars.FORGE_AWS_REGION }}
       - name: Reconcile
+        if: steps.config.outputs.ready == 'true'
         env:
           SINCE: ${{ github.event_name == 'workflow_dispatch' && inputs.since || '2026-01-01' }}
           FORGE_GITHUB_TOKEN: ${{ steps.read-token.outputs.token }}
@@ -56,10 +70,6 @@ jobs:
           AWS_REGION: ${{ vars.FORGE_AWS_REGION }}
         run: |
           set -euo pipefail
-          if [ -z "${FORGE_HISTORY_BUCKET}" ]; then
-            echo "::error::FORGE_HISTORY_BUCKET is not configured. Reconciliation does not invent history."
-            exit 1
-          fi
           pnpm forge reconcile --since "$SINCE" --json
       - name: Job summary
         if: always()

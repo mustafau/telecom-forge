@@ -70,10 +70,10 @@ jobs:
 
       - name: Mint read-only GitHub App token
         id: read-token
-        if: vars.FORGE_APP_ID != ''
+        if: ${{ vars.FORGE_APP_CLIENT_ID != '' || vars.FORGE_APP_ID != '' }}
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.FORGE_APP_ID }}
+          client-id: ${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}
           private-key: ${{ secrets.FORGE_APP_PRIVATE_KEY }}
           owner: ${{ vars.FORGE_GITHUB_OWNER }}
           permission-contents: read
@@ -251,11 +251,18 @@ jobs:
         with:
           role-to-assume: ${{ secrets.FORGE_HISTORY_WRITER_ROLE_ARN }}
           aws-region: ${{ vars.FORGE_AWS_REGION }}
+      - name: Require GitHub App Client ID for live publish
+        run: |
+          set -euo pipefail
+          if [ -z "${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}" ]; then
+            echo "::error::Set repository variable FORGE_APP_CLIENT_ID (GitHub App Client ID) and secret FORGE_APP_PRIVATE_KEY before live publish. Legacy FORGE_APP_ID is still accepted."
+            exit 1
+          fi
       - name: Mint publish token
         id: publish-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.FORGE_APP_ID }}
+          client-id: ${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}
           private-key: ${{ secrets.FORGE_APP_PRIVATE_KEY }}
           owner: ${{ vars.FORGE_GITHUB_OWNER }}
           permission-contents: write

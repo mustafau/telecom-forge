@@ -4,7 +4,7 @@ These entries are placeholders from `catalog/workspace.yaml`. They are not claim
 
 | Alias | Access | Owner placeholder | Checkout | Build profile | Responsibility |
 |---|---|---|---|---|---|
-| `telecom-api-sandbox` | read-write | `YOUR_GITHUB_OWNER` | `repos/telecom-api-sandbox` | `node-script` | Illustrative API sandbox a task may edit |
+| `telecom-api-sandbox` | read-write | `YOUR_GITHUB_OWNER` | `repos/telecom-api-sandbox` | `node-script` | Telecom API sandbox; writable target |
 | `shared-contracts` | read-only | `YOUR_GITHUB_OWNER` | `repos/shared-contracts` | `none` | Illustrative shared schemas a task may read |
 
 Add a repository by a reviewed pull request to `catalog/workspace.yaml` and this map. A task file cannot add one.

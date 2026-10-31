@@ -91,11 +91,18 @@ jobs:
         with:
           name: retro-report
           path: retro-input
+      - name: Require GitHub App Client ID for retrospective publish
+        run: |
+          set -euo pipefail
+          if [ -z "${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}" ]; then
+            echo "::error::Set repository variable FORGE_APP_CLIENT_ID (GitHub App Client ID) and secret FORGE_APP_PRIVATE_KEY before publishing a retrospective. Legacy FORGE_APP_ID is still accepted."
+            exit 1
+          fi
       - name: Mint metarepo draft-PR token
         id: retro-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.FORGE_APP_ID }}
+          client-id: ${{ vars.FORGE_APP_CLIENT_ID || vars.FORGE_APP_ID }}
           private-key: ${{ secrets.FORGE_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}

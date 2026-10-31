@@ -14,4 +14,4 @@ A GitHub App installation token is minted inside the job that needs it. Prepare 
 
 ## Consequences
 
-Tokens are short-lived and job-scoped. The workflow uses `actions/create-github-app-token` pinned to a commit. No organization id is hard-coded; `YOUR_GITHUB_OWNER` stays a placeholder until a person sets `FORGE_GITHUB_OWNER`.
+Tokens are short-lived and job-scoped. The workflow uses `actions/create-github-app-token` pinned to a commit, with `client-id` set from repository variable `FORGE_APP_CLIENT_ID` (GitHub App Client ID). Legacy `FORGE_APP_ID` is still accepted as a fallback. The private key is `FORGE_APP_PRIVATE_KEY`. Mint steps do not run with an empty id. No organization id is hard-coded; `YOUR_GITHUB_OWNER` stays a placeholder until a person sets `FORGE_GITHUB_OWNER`.

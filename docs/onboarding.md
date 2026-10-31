@@ -14,4 +14,4 @@ About ten minutes, with Node, pnpm, and Git. No cloud account.
 
 A task you add has to be committed before `validate-task` can see it. The implementation workflow is started manually from the default branch so a feature branch cannot supply its own workflow file.
 
-When you are ready to point this at real repositories, change only the catalog in a pull request, register the GitHub App described in `docs/adr/0002-github-app-tokens.md`, and set the history bucket variables. Leave `dry_run` true for the first dispatch.
+When you are ready to point this at real repositories, change only the catalog in a pull request, register the GitHub App described in `docs/adr/0002-github-app-tokens.md`, set repository variable `FORGE_APP_CLIENT_ID` and secret `FORGE_APP_PRIVATE_KEY`, and set the history bucket variables. Leave `dry_run` true for the first dispatch.

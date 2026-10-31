@@ -44,7 +44,7 @@ repositories:
     access: read-write
     build_profile: node-script
     owned_by: telecom-platform
-    description: Illustrative telecom API sandbox. Replace owner and name before live use.
+    description: Telecom API sandbox maintained by this workspace. Set owner before live GitHub use.
     depends_on: []
     allow_submodules: false
     allow_lfs: false

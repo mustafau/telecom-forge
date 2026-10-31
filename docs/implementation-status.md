@@ -28,7 +28,7 @@ Last updated: 2026-10-27.
 ## Remaining work
 
 - Run `pi --help` on a Node build that can load the 1.4.0 CLI, and adjust argv if the flags differ. Do not treat the current binary failure as a successful Pi run.
-- Configure a GitHub App, protected `main`, and the `forge-publish` environment before any live publish. The workflows mint tokens only when those variables exist.
+- Configure a GitHub App, protected `main`, and the `forge-publish` environment before any live publish. Set `FORGE_APP_CLIENT_ID` (preferred) or legacy `FORGE_APP_ID`, plus `FORGE_APP_PRIVATE_KEY`. Workflows pass `client-id` to `actions/create-github-app-token` and skip minting when the id is unset.
 - Create the private history bucket, OIDC role, encryption, and lifecycle rules outside this repository. Until `FORGE_HISTORY_BUCKET` and `FORGE_HISTORY_WRITER_ROLE_ARN` are set, the implement workflow stops before the agent.
 - The retrospective publisher writes report files and mints a metarepo token when dispatched with `dry_run=false`. It does not yet push a branch or open the draft pull request. That step needs the same explicit GitHub App setup and must not edit `.agents/skills/`.
 - Action SHAs were resolved from tag objects on 2026-10-27 (`actions/checkout` v7.0.1, `actions/setup-node` v7.1.0, `actions/upload-artifact` v7.0.2, `actions/download-artifact` v8.0.2, `actions/create-github-app-token` v3.3.0, `aws-actions/configure-aws-credentials` v6.3.0, `pnpm/action-setup` v6.1.0). Re-check them before relying on Actions in production.
