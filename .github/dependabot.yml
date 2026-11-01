@@ -6,6 +6,8 @@ updates:
       interval: weekly
     versioning-strategy: increase
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 5
     groups:
       production-dependencies:
         dependency-type: production
@@ -18,6 +20,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 5
     groups:
       github-actions:
         patterns: ["*"]
