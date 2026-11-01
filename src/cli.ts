@@ -104,6 +104,20 @@ async function main(): Promise<void> {
     const runDir = path.resolve(required(parsed, "prepared"));
     const harnessName = required(parsed, "harness");
     const result = await executeHarness({ runDir, harnessName, repoRoot });
+    const provider = process.env.FORGE_MODEL_PROVIDER ?? "?";
+    const model = process.env.FORGE_MODEL_ID ?? "?";
+    const usage = result.usage;
+    await summarize(
+      "harness",
+      [
+        `- Harness: \`${harnessName}\``,
+        `- State: \`${result.state}\``,
+        `- Model: \`${provider}/${model}\``,
+        `- Tokens: input=${usage.inputTokens ?? 0}, output=${usage.outputTokens ?? 0}, cached=${usage.cachedTokens ?? 0}`,
+        `- Estimated USD: ${usage.estimatedUsd ?? "n/a"}`,
+        ...(result.errors.length > 0 ? [`- Errors: ${result.errors.map((error) => `\`${error}\``).join("; ")}`] : []),
+      ].join("\n"),
+    );
     emit(result.state === "completed" ? 0 : 2, result, parsed.json, `Harness ${harnessName} finished ${result.state}.`);
     return;
   }
