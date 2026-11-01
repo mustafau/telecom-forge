@@ -12,6 +12,8 @@ import { validateFindings } from "../../src/retrospective/analyze.js";
 import { redactSecrets } from "../../src/security/redact.js";
 import { buildAgentEnvironment, assertAgentEnvironment } from "../../src/security/agent-env.js";
 import { materializePiAgentDir, PI_FREE_TIER_RETRY_SETTINGS } from "../../src/harness/pi-settings.js";
+import { extractProviderRetryAfterMs } from "../../src/harness/provider-retry.js";
+import { buildPiArgs } from "../../src/harness/pi-adapter.js";
 import { FilesystemHistoryStore } from "../../src/history/filesystem-store.js";
 import { HistoryConflictError } from "../../src/history/storage.js";
 import { S3HistoryStore, type ObjectClient } from "../../src/history/s3-store.js";
@@ -185,6 +187,47 @@ describe("redaction, agent env, and history", () => {
     expect(settings.retry.provider.maxRetryDelayMs).toBe(60_000);
     expect(settings.retry.maxRetries).toBe(5);
     expect(settings.cacheWarming).toBe("off");
+    expect(settings.defaultThinkingLevel).toBe("minimal");
+  });
+
+  it("extracts short Gemini retry-after hints and ignores multi-hour quotas", () => {
+    const rpm = JSON.stringify({
+      type: "message_end",
+      message: {
+        stopReason: "error",
+        errorMessage: 'code":429,"message":"Please retry in 8.9s. Quota exceeded for generate_content_free_tier_requests"',
+      },
+    });
+    expect(extractProviderRetryAfterMs(`${rpm}\n`)).toBe(8900);
+    const hours = JSON.stringify({
+      type: "message_end",
+      message: {
+        stopReason: "error",
+        errorMessage: 'code":429, retryDelay": "18346s", "status": "RESOURCE_EXHAUSTED"',
+      },
+    });
+    expect(extractProviderRetryAfterMs(`${hours}\n`)).toBeNull();
+    const continueArgs = buildPiArgs(
+      {
+        runId: "local-1",
+        taskId: "TF-0002",
+        attempt: 1,
+        workingDirectory: ".",
+        taskMarkdownPath: "task/task.md",
+        trustedInstructionsPath: "control/AGENTS.md",
+        implementPromptPath: "control/prompts/implement.md",
+        trustedSkillsDirectory: "control/.agents/skills",
+        sessionDirectory: "sessions",
+        outputDirectory: "out",
+        modelProvider: "google",
+        modelId: "gemini-3.5-flash-lite",
+        timeoutMs: 1000,
+        mode: "implement",
+      },
+      { continueSession: true },
+    );
+    expect(continueArgs).toContain("--continue");
+    expect(continueArgs.some((arg) => arg.includes("@task/"))).toBe(false);
   });
 
   it("stores immutable objects and compare-and-swap snapshots", async () => {

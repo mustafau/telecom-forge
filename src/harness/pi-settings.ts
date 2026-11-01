@@ -11,6 +11,7 @@ import path from "node:path";
  */
 export const PI_FREE_TIER_RETRY_SETTINGS = {
   cacheWarming: "off",
+  defaultThinkingLevel: "minimal",
   retry: {
     enabled: true,
     maxRetries: 5,
