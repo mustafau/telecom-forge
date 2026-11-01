@@ -99,7 +99,8 @@ jobs:
           FORGE_GITHUB_TOKEN: ${{ steps.read-token.outputs.token }}
         run: |
           set -euo pipefail
-          pnpm forge prepare --task-ref "$TASK_BRANCH" --task-path "$TASK_PATH" --control-ref "${{ github.sha }}" --json > prepare.json
+          # --silent keeps pnpm's script banner out of prepare.json
+          pnpm --silent forge prepare --task-ref "$TASK_BRANCH" --task-path "$TASK_PATH" --control-ref "${{ github.sha }}" --json > prepare.json
           node --input-type=module -e 'import {readFileSync} from "node:fs"; const manifest = JSON.parse(readFileSync("prepare.json","utf8")); console.log(`run_id=${manifest.run_id}`); console.log(`run_dir=.forge-runtime/runs/${manifest.run_id}`);' >> "$GITHUB_OUTPUT"
 
       - name: Pack prepared handoff
