@@ -30,6 +30,17 @@ export function parsePorcelain(status: string): Array<{ path: string; status: st
 }
 
 export async function inspectWorktree(checkout: string): Promise<WorktreeChange[]> {
+  const toplevel = await git(["rev-parse", "--show-toplevel"], { cwd: checkout });
+  if (toplevel.code !== 0) {
+    throw new ForgeError("GIT_FAILED", toplevel.stderr.trim() || `git rev-parse failed in ${checkout}`);
+  }
+  const root = path.resolve(checkout);
+  if (path.resolve(toplevel.stdout.trim()) !== root) {
+    throw new ForgeError(
+      "GIT_FAILED",
+      `Checkout ${root} is not its own Git work tree (toplevel=${toplevel.stdout.trim()}). The nested .git is missing or corrupt.`,
+    );
+  }
   const result = await git(["status", "--porcelain=v1", "-uall"], { cwd: checkout });
   if (result.code !== 0) {
     throw new ForgeError("GIT_FAILED", result.stderr.trim() || "git status failed");
@@ -37,7 +48,7 @@ export async function inspectWorktree(checkout: string): Promise<WorktreeChange[
   const status = result.stdout.replace(/\n$/, "");
   const changes: WorktreeChange[] = [];
   for (const entry of parsePorcelain(status)) {
-    const absolute = path.join(checkout, entry.path);
+    const absolute = resolveWorktreePath(root, entry.path);
     let symlink = false;
     let bytes = 0;
     let binary = false;
@@ -63,6 +74,27 @@ export async function inspectWorktree(checkout: string): Promise<WorktreeChange[
     });
   }
   return changes;
+}
+
+/** Join a porcelain path onto a checkout and reject escapes into the parent workspace. */
+export function resolveWorktreePath(checkout: string, relativePath: string): string {
+  if (path.isAbsolute(relativePath) || relativePath.split(/[\\/]/).includes("..")) {
+    throw new ForgeError(
+      "UNSAFE_PATH",
+      `Worktree path "${relativePath}" is not confined to the repository checkout.`,
+      { exitCode: 3 },
+    );
+  }
+  const root = path.resolve(checkout);
+  const absolute = path.resolve(root, relativePath);
+  if (absolute !== root && !absolute.startsWith(`${root}${path.sep}`)) {
+    throw new ForgeError(
+      "UNSAFE_PATH",
+      `Worktree path "${relativePath}" resolves outside ${root}.`,
+      { exitCode: 3 },
+    );
+  }
+  return absolute;
 }
 
 export function assertChangesAllowed(

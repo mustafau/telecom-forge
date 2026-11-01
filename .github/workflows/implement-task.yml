@@ -108,7 +108,8 @@ jobs:
           set -euo pipefail
           rm -rf forge-handoff
           mkdir -p forge-handoff/dot-runtime
-          cp -a repos forge-handoff/repos
+          # Tar keeps nested .git packfiles intact across artifact upload/download.
+          tar -C repos -czf forge-handoff/repos.tar.gz .
           cp -a .forge-runtime/runs forge-handoff/dot-runtime/runs
       - name: Upload prepared handoff
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -143,9 +144,14 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf repos
-          mkdir -p .forge-runtime
-          cp -a forge-handoff/repos repos
+          mkdir -p repos .forge-runtime
+          tar -xzf forge-handoff/repos.tar.gz -C repos
           cp -a forge-handoff/dot-runtime/runs .forge-runtime/runs
+          # Drop the download tree so the agent/git cannot confuse it with source changes.
+          rm -rf forge-handoff
+          for checkout in repos/*/; do
+            git -C "$checkout" rev-parse --show-toplevel >/dev/null
+          done
       - name: Run harness and verify without GitHub credentials
         env:
           GITHUB_TOKEN: ""
@@ -170,7 +176,9 @@ jobs:
           set -euo pipefail
           rm -rf forge-handoff
           mkdir -p forge-handoff/dot-runtime
-          cp -a repos forge-handoff/repos
+          if [ -d repos ]; then
+            tar -C repos -czf forge-handoff/repos.tar.gz .
+          fi
           cp -a .forge-runtime/runs forge-handoff/dot-runtime/runs
       - name: Upload recovery bundle
         if: always()
@@ -209,6 +217,7 @@ jobs:
           set -euo pipefail
           mkdir -p .forge-runtime
           cp -a forge-handoff/dot-runtime/runs .forge-runtime/runs
+          rm -rf forge-handoff
       - name: Assume history writer role
         if: inputs.allow_nondurable_history == false
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -312,7 +321,7 @@ jobs:
             echo "- Dry run input: ${{ inputs.dry_run }}"
             echo ""
             echo "Model/token usage is in the **agent_and_verify** job summary (written by \`forge run\`)."
-            echo "Full transcript: \`run-bundle\` artifact → \`harness-result.json\` / \`harness/pi-events.jsonl\`."
+            echo "Full transcript: \`run-bundle\` artifact (repos.tar.gz + runs) → \`harness-result.json\` / \`harness/pi-events.jsonl\`."
             echo ""
             echo "A successful publish creates draft pull requests only. It does not merge or deploy."
             echo "If evidence persistence failed, publication did not run."

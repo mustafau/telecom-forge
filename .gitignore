@@ -2,6 +2,7 @@ node_modules/
 .pnpm-store/
 dist/
 repos/
+forge-handoff/
 .forge-runtime/
 coverage/
 *.log

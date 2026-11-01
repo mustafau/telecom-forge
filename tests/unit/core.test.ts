@@ -4,7 +4,7 @@ import { assertSafeRelativePath } from "../../src/lib/paths.js";
 import { ForgeError } from "../../src/lib/errors.js";
 import { parsePiJsonl, usageFromCompletedMessages } from "../../src/harness/pi-events.js";
 import { assertRunTransition, assertTaskTransition } from "../../src/tasks/states.js";
-import { assertPatchText } from "../../src/patch/scan.js";
+import { assertPatchText, resolveWorktreePath } from "../../src/patch/scan.js";
 import { withRetry, RateLimitError } from "../../src/lib/retry.js";
 import { parseWeek, percentile, previousCompletedWeek } from "../../src/metrics/week.js";
 import { computeMetrics, type RunSummary } from "../../src/metrics/compute.js";
@@ -106,6 +106,11 @@ describe("state, patches, retry, and weeks", () => {
     expect(() => assertPatchText("diff --git a/.git/hooks/pre-commit b/.git/hooks/pre-commit\nnew file mode 100755\n", 1000)).toThrow(
       ForgeError,
     );
+    expect(resolveWorktreePath("/tmp/checkout", "src/pagination.js")).toBe(
+      path.resolve("/tmp/checkout", "src/pagination.js"),
+    );
+    expect(() => resolveWorktreePath("/tmp/checkout", "../forge-handoff/x")).toThrow(/confined/);
+    expect(() => resolveWorktreePath("/tmp/checkout", "forge-handoff/../../etc/passwd")).toThrow(/confined/);
   });
 
   it("retries rate limits and computes Pacific weeks across DST", async () => {
