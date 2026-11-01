@@ -181,6 +181,7 @@ describe("redaction, agent env, and history", () => {
     const settings = JSON.parse(await readFile(path.join(agentDir, "settings.json"), "utf8"));
     expect(settings).toEqual(PI_FREE_TIER_RETRY_SETTINGS);
     expect(settings.retry.maxAgentDelayMs).toBe(60_000);
+    expect(settings.retry.provider.maxRetries).toBe(3);
     expect(settings.retry.provider.maxRetryDelayMs).toBe(60_000);
     expect(settings.retry.maxRetries).toBe(5);
     expect(settings.cacheWarming).toBe("off");
