@@ -80,6 +80,17 @@ jobs:
           permission-pull-requests: read
           permission-checks: read
 
+      - name: Fetch task branch
+        env:
+          TASK_BRANCH: ${{ inputs.task_branch }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/${TASK_BRANCH}:refs/heads/${TASK_BRANCH}"
+
+      - name: Install fixture remotes for nondurable demo
+        if: inputs.allow_nondurable_history == true
+        run: bash scripts/local-setup.sh
+
       - name: Prepare workspace
         id: prepare
         env:
@@ -170,7 +181,7 @@ jobs:
           include-hidden-files: true
 
   persist_evidence:
-    if: always()
+    if: always() && needs.agent_and_verify.result != 'skipped'
     needs: [validate_and_prepare, agent_and_verify]
     runs-on: ubuntu-latest
     permissions:
