@@ -11,6 +11,7 @@ import { computeMetrics, type RunSummary } from "../../src/metrics/compute.js";
 import { validateFindings } from "../../src/retrospective/analyze.js";
 import { redactSecrets } from "../../src/security/redact.js";
 import { buildAgentEnvironment, assertAgentEnvironment } from "../../src/security/agent-env.js";
+import { materializePiAgentDir, PI_FREE_TIER_RETRY_SETTINGS } from "../../src/harness/pi-settings.js";
 import { FilesystemHistoryStore } from "../../src/history/filesystem-store.js";
 import { HistoryConflictError } from "../../src/history/storage.js";
 import { S3HistoryStore, type ObjectClient } from "../../src/history/s3-store.js";
@@ -170,7 +171,19 @@ describe("redaction, agent env, and history", () => {
     const env = buildAgentEnvironment({ PATH: "/usr/bin", GITHUB_TOKEN: "ghp_abcdefghijklmnopqrstuvwxyz", OPENAI_API_KEY: "present" });
     expect(env.GITHUB_TOKEN).toBeUndefined();
     expect(env.OPENAI_API_KEY).toBe("present");
+    expect(env.PI_CODING_AGENT_DIR).toBeUndefined();
     expect(() => assertAgentEnvironment({ GITHUB_TOKEN: "value" })).toThrow(/forbidden/);
+  });
+
+  it("materializes Pi settings with free-tier-sized retry delays", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "forge-pi-agent-"));
+    const agentDir = await materializePiAgentDir(path.join(root, "pi-agent"));
+    const settings = JSON.parse(await readFile(path.join(agentDir, "settings.json"), "utf8"));
+    expect(settings).toEqual(PI_FREE_TIER_RETRY_SETTINGS);
+    expect(settings.retry.maxAgentDelayMs).toBe(60_000);
+    expect(settings.retry.provider.maxRetryDelayMs).toBe(60_000);
+    expect(settings.retry.maxRetries).toBe(5);
+    expect(settings.cacheWarming).toBe("off");
   });
 
   it("stores immutable objects and compare-and-swap snapshots", async () => {

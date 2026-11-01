@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { assertAgentEnvironment, buildAgentEnvironment } from "../security/agent-env.js";
 import { normalizePiEvents, parsePiJsonl } from "./pi-events.js";
+import { materializePiAgentDir } from "./pi-settings.js";
 import type { CodingHarness, EventSink, HarnessRunInput, HarnessRunResult } from "./types.js";
 
 const MAX_STREAM_BYTES = 20_000_000;
@@ -52,6 +53,7 @@ export class PiHarness implements CodingHarness {
     const rawEventFile = path.join(input.outputDirectory, "pi-events.jsonl");
     const stderrFile = path.join(input.outputDirectory, "pi-stderr.log");
     const normalizedEventFile = path.join(input.outputDirectory, "events.normalized.jsonl");
+    const agentDir = await materializePiAgentDir(path.join(input.outputDirectory, "pi-agent"));
     const env = buildAgentEnvironment({
       ...process.env,
       FORGE_RUN_ID: input.runId,
@@ -59,6 +61,8 @@ export class PiHarness implements CodingHarness {
       FORGE_MODEL_PROVIDER: input.modelProvider,
       FORGE_MODEL_ID: input.modelId,
     });
+    // Inject after the allowlist filter so operator ~/.pi is never used.
+    env.PI_CODING_AGENT_DIR = agentDir;
     assertAgentEnvironment(env);
     const args = buildPiArgs(input);
     const stdout = createWriteStream(rawEventFile);
